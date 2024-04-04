@@ -26,7 +26,7 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="author in bookstoreStore.authors" :key="author.id">
+          <tr v-for="author in paginatedAuthors" :key="author.id">
             <td>{{ author.id }}</td>
             <td>{{ author.firstName }}</td>
             <td>{{ author.lastName }}</td>
@@ -41,11 +41,17 @@
         </table>
       </div>
     </form>
+
+    <div class="pagination">
+      <button class="btn btn-secondary" @click="previousPage" :disabled="currentPage === 1">Poprzednia</button>
+      <span>{{ currentPage }}</span>
+      <button class="btn btn-secondary" @click="nextPage" :disabled="currentPage === totalPages">Następna</button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import {onBeforeMount} from 'vue';
+import {computed, onBeforeMount, ref} from 'vue';
 import router from "@/router/index.js";
 import {useToast} from "vue-toast-notification";
 import {useBookstoreStore} from "@/stores/BookstoreStore.js";
@@ -54,6 +60,8 @@ onBeforeMount(async () => {
   await bookstoreStore.getAuthors();
 });
 
+const currentPage = ref(1);
+const pageSize = 10;
 const bookstoreStore = useBookstoreStore();
 const $toast = useToast();
 
@@ -64,6 +72,33 @@ const deleteAuthor = async (authorId) => {
     toast.dismiss();
   }, 3000);
 };
+
+const paginatedAuthors = computed(() => {
+  if (!bookstoreStore.authors) {
+    return [];
+  }
+
+  const start = (currentPage.value - 1) * pageSize;
+  const end = start + pageSize;
+  return bookstoreStore.authors.slice(start, end);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(bookstoreStore.authors.length / pageSize);
+});
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
 
 </script>
 
@@ -113,4 +148,31 @@ th, td {
   background-color: #007bff;
   color: white;
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  margin: 0 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.pagination button:hover {
+  background-color: #0056b3;
+}
+
+.pagination span {
+  margin: 0 5px;
+  font-weight: bold;
+}
+
 </style>
